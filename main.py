@@ -245,8 +245,9 @@ def do(jar='hw1.jar'):
         gen.regenfunc(random.choice([1, 2, 3]))
         gen.dgened = not whered
         if idlock.acquire(True):
+            global idnow
             id = idnow
-            id +=1
+            idnow +=1
             idlock.release()
         instr = str(len(gen.function))
         instr += '\n'
