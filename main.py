@@ -223,7 +223,8 @@ def dy(x):
 def dz(x):
     return sympy.diff(x, sympy.symbols('z'))
 
-
+idlock = threading.Lock()
+idnow = 0
 def do(jar='hw1.jar'):
     global data
     try:
@@ -243,7 +244,10 @@ def do(jar='hw1.jar'):
         gen.genfunc = True
         gen.regenfunc(random.choice([1, 2, 3]))
         gen.dgened = not whered
-        id = random.choice(range(1000))
+        if idlock.acquire(True):
+            id = idnow
+            id +=1
+            idlock.release()
         instr = str(len(gen.function))
         instr += '\n'
         funclocals = {'dx': dx, 'dy': dy, 'dz': dz}
@@ -275,7 +279,10 @@ def do(jar='hw1.jar'):
 
         test = gen.generateExpr(item=2, depth=DEPTH, varilist=['x', 'y', 'z'])
         time1 = time.time()
-        correct = aSympify(test, locals=funclocals)
+        try:
+            correct = aSympify(test, locals=funclocals)
+        except Exception as e:
+            return
         time_sympify = time.time() - time1
         if (len(str(correct.expand())) > 2000):
             return
@@ -306,10 +313,20 @@ def do(jar='hw1.jar'):
                     f.write(instr + test)
                 mutex.release()
             return
+        try:
+            check = aSympify(out, {})
+            test1 = correct.expand()
+            test2 = check.expand()
+            subresult = (test1 - test2).simplify()
+        except:
+            if datawrite.acquire(True):
+                data[jar]['tle'] -=1
+                if ([file for file in os.listdir('.') if "./tle_" + jar + "_" + str(id) + '.txt' in file] != []):
+                    os.remove("./tle_" + jar + "_" + str(id) + '.txt')
+                datawrite.release()
+            return
 
-        check = aSympify(out, {})
-        test1 = correct.expand()
-        test2 = check.expand()
+
         # print("acf pre")
         if (datawrite.acquire(True)):
             # print("acfed pred")
@@ -317,7 +334,7 @@ def do(jar='hw1.jar'):
             # print(instr + test)
             # print(str(id) + ": out: ", end="")
             # print(out)
-            if ((test1 - test2).simplify() != 0):
+            if (subresult != 0):
                 data[jar]['fail'] += 1
                 # print(str(id) + ":simplified out and correct-------------")
                 # print(str(test2))
@@ -344,10 +361,13 @@ def do(jar='hw1.jar'):
             print(total)
             total = total - 1
             data[jar]['tle'] -= 1
-            os.remove("./tle_" + jar + "_" + str(id) + '.txt')
+            if([file for file in os.listdir('.') if "./tle_" + jar + "_" + str(id) + '.txt' in file]!=[]):
+                os.remove("./tle_" + jar + "_" + str(id) + '.txt')
             datawrite.release()
 
-    except:
+    except Exception as e:
+        print(e.args)
+        print("fatal error!!!!!!!!!!")
         pass
 
 
