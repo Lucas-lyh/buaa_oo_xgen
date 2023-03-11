@@ -1,0 +1,4 @@
+2
+f(x,y)=  sin(x) -- y **+4*sin(+3)
+h(z,y,x)=sin(4)
+  +2+ -f(f(x** 1,dy( -cos(y))),cos(x** +1))

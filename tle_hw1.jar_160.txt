@@ -1,0 +1,3 @@
+1
+g(x,z,y)= -dx(- y)
+- -sin(y)- - (+  g(sin(cos(+3)),( -  +3),cos(sin(z** 0))) * z * cos(3)-+sin(sin(cos(-0)))- + +0*sin(g(sin(0),3,sin(+4))) *cos(sin(y **4))) **4

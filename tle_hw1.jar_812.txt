@@ -1,0 +1,5 @@
+3
+g(x,y)= - x
+h(y,z)= ++z * sin(-3)++ 1
+f(z,x)= z * z - - (2 -+ z **4* x)** +0 * cos(-1)
+ sin(sin(sin(cos(3))))

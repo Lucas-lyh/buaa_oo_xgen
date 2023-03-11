@@ -1,0 +1,4 @@
+2
+f(z,x)=++ cos(z ** 4)
+g(y,z,x)= --x **4
+-+ f(f(sin(sin(-2)),sin(cos(4))),( cos(1)++z**0 * f(sin(y),g(x** +3,z,-1)) + -f(cos(z),y) * y **+0))*sin(cos(y))+ -dy( + - sin(cos(y** +0)))

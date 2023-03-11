@@ -1,0 +1,5 @@
+3
+g(z,y)= cos(y **+1)
+h(x,z,y)= - z* (+y ** +3) **+4+- 2* g(y ** 1,z)
+f(y,z,x)= -sin(+1)
+-z*f(+3,z,sin(g(y**0,sin(1)))) - sin(cos(( +sin(4)*y +- z)))
