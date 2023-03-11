@@ -287,10 +287,9 @@ def do(jar='hw1.jar'):
             return
         time1 = time.time()
         try:
-            correct = aSympify(test, locals=funclocals)
+            correct = aSympify(test, locals=funclocals).expand()
         except Exception as e:
             return
-        time_sympify = time.time() - time1
         if (len(str(correct.expand())) > 2000):
             return
 
@@ -341,7 +340,7 @@ def do(jar='hw1.jar'):
                 datawrite.release()
             return
         try:
-            test1 = correct.expand()
+            test1 = correct
             test2 = check.expand()
             subresult = (test1 - test2).simplify()
         except:
