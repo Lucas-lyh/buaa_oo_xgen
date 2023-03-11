@@ -9,7 +9,7 @@ import sympy
 from sympy import symbols
 
 DEPTH = 4
-ITEM = 2
+ITEM = 10
 
 
 class Generator:
@@ -326,7 +326,8 @@ def do(jar='hw1.jar'):
                 if (mutex.acquire(True)):
                     # print("acfed pred")
                     with open("./hacklist.txt", 'a') as f:
-                        f.write(jar + 'can\'t sympify, try to run and check the result\ndata:-------------------------------\n')
+                        f.write(
+                            jar + 'can\'t sympify, try to run and check the result\ndata:-------------------------------\n')
                         f.write(str(instr) + str(test))
                         f.write('\nerr:\n' + out + '\n============================================\n')
                     data[jar]['tle'] -= 1
@@ -376,6 +377,8 @@ def do(jar='hw1.jar'):
 
 import tkinter as tk
 from tkintertable import TableCanvas
+
+onlyOne = threading.Lock()
 
 
 def tickerRedraw(tb, root):
@@ -436,20 +439,32 @@ def timeoutMain(jar, times, num):
         exit(0)
     else:
         for i in range((times + num - 1) // num):
+            if datawrite.acquire(True):
+                data['当前测试进度']['name'] = str(i * num) + '/' + str(times)
+                datawrite.release()
             t = threading.Thread(target=timeoutMain, args=(jar, min(num, times - i * num), num))
             t.start()
             t.join()
+        if datawrite.acquire(True):
+            data["当前测试进度"]['name'] = 'finished'
+            datawrite.release()
 
 
 def forjar(jars, ent, e2):
-    for jar in jars:
-        t = threading.Thread(target=timeoutMain, args=(jar, int(ent.get()), int(e2.get())))
-        t.start()
-        t.join()
+    if onlyOne.acquire(True, timeout=1):
+        for jar in jars:
+            t = threading.Thread(target=timeoutMain, args=(jar, int(ent.get()), int(e2.get())))
+            t.start()
+            t.join()
+        onlyOne.release()
 
 
-def trigTest(jars, ent, e2):
-    threading.Thread(target=forjar, args=(jars, ent, e2)).start()
+def trigTest(jars, ent, e2, edep, eitem):
+    global DEPTH, ITEM
+    ITEM = int(eitem.get())
+    DEPTH = int(edep.get())
+    t = threading.Thread(target=forjar, args=(jars, ent, e2))
+    t.start()
 
 
 def window_thread(data, jars):
@@ -457,16 +472,34 @@ def window_thread(data, jars):
     root.geometry("1024x500")
     frame = tkinter.Frame(root)
     frame.pack(fill="both", expand=True)
-    tk.Label(root, text="输入测试次数").pack(side='left')
-    e = tk.Entry(root)
+
+    framebutton = tkinter.Frame(root)
+    framebutton.pack(side='right', fill='both', expand=True)
+
+    frame2 = tkinter.Frame(root)
+    frame2.pack(side='top', fill='x')
+    tk.Label(frame2, text="输入测试次数").pack(side='left')
+    e = tk.Entry(frame2)
     e.pack(side="left", fill='x', expand=True)
     e.insert(0, '100')
-    tk.Label(root, text="输入线程").pack(side='left')
-    e2 = tk.Entry(root)
+    tk.Label(frame2, text="输入线程").pack(side='left')
+    e2 = tk.Entry(frame2)
     e2.pack(side="left", fill='x', expand=True)
     e2.insert(0, '32')
-    b = tk.Button(root, text="run!", command=lambda: trigTest(jars, e, e2))
-    b.pack(side="right", fill='x', expand=True)
+
+    frame3 = tkinter.Frame(root)
+    frame3.pack(fill='x')
+    tk.Label(frame3, text='表达式嵌套深度：').pack(side='left')
+    e3 = tk.Entry(frame3)
+    e3.pack(side='left', fill='x', expand=True)
+    e3.insert(0, '4')
+    tk.Label(frame3, text="表达式项数：").pack(side='left')
+    e4 = tk.Entry(frame3)
+    e4.pack(side='left', fill='x', expand=True)
+    e4.insert(0, '3')
+
+    b = tk.Button(framebutton, text="run!", command=lambda: trigTest(jars, e, e2, e3, e4))
+    b.pack(side="right", fill='both', expand=True)
     tb = TableCanvas(frame, data=data)
     tb.show()
     tickerRedraw(tb, root)
@@ -479,6 +512,7 @@ data = {}
 async def main(jars):
     for jar in jars:
         data[jar] = {'name': jar, 'pass': 0, 'fail': 0, 'tle': 0, 're': 0}
+    data['当前测试进度'] = {'name': "0/0"}
     threading.Thread(target=window_thread, args=(data, jars)).start()
 
 
