@@ -224,8 +224,11 @@ def dy(x):
 def dz(x):
     return sympy.diff(x, sympy.symbols('z'))
 
+
 idlock = threading.Lock()
 idnow = 0
+
+
 def do(jar='hw1.jar'):
     global data
     try:
@@ -248,7 +251,7 @@ def do(jar='hw1.jar'):
         if idlock.acquire(True):
             global idnow
             id = idnow
-            idnow +=1
+            idnow += 1
             idlock.release()
         instr = str(len(gen.function))
         instr += '\n'
@@ -263,7 +266,6 @@ def do(jar='hw1.jar'):
                 varistr += v
             fstart += varistr
             fstart += ')'
-            space = '\t\t\t\t\t'
             defstr = "def " + fstart + ":\n" + "\treturn sympy.sympify(\"" + \
                      str(sympy.sympify(gen.function[name][1], locals=funclocals))
 
@@ -310,7 +312,7 @@ def do(jar='hw1.jar'):
             # print('acre pre')
             if mutex.acquire(True):
                 # print('acred pre')
-                if([file for file in os.listdir('.') if "tle_" + jar + "_" + str(id) + '.txt' in file] != []):
+                if ([file for file in os.listdir('.') if "tle_" + jar + "_" + str(id) + '.txt' in file] != []):
                     os.remove("./tle_" + jar + "_" + str(id) + '.txt')
                 with open('./re_' + jar + "_" + str(id) + '.txt', 'w') as f:
                     f.write(instr + test)
@@ -318,53 +320,51 @@ def do(jar='hw1.jar'):
             return
         try:
             check = aSympify(out, {})
+        except:
+            if (datawrite.acquire(True)):
+                data[jar]['fail'] += 1
+                if (mutex.acquire(True)):
+                    # print("acfed pred")
+                    with open("./hacklist.txt", 'a') as f:
+                        f.write(jar + 'can\'t sympify, try to run and check the result\ndata:-------------------------------\n')
+                        f.write(str(instr) + str(test))
+                        f.write('\nerr:\n' + out + '\n============================================\n')
+                    data[jar]['tle'] -= 1
+                    if ([file for file in os.listdir('.') if "tle_" + jar + "_" + str(id) + '.txt' in file] != []):
+                        os.remove("./tle_" + jar + "_" + str(id) + '.txt')
+                    mutex.release()
+                datawrite.release()
+            return
+        try:
             test1 = correct.expand()
             test2 = check.expand()
             subresult = (test1 - test2).simplify()
         except:
             if datawrite.acquire(True):
-                data[jar]['tle'] -=1
-                if ([file for file in os.listdir('.') if "tle_" + jar + "_" + str(id) + '.txt' in file] != []):
-                    os.remove("./tle_" + jar + "_" + str(id) + '.txt')
+                if mutex.acquire(True):
+                    data[jar]['tle'] -= 1
+                    if ([file for file in os.listdir('.') if "tle_" + jar + "_" + str(id) + '.txt' in file] != []):
+                        os.remove("./tle_" + jar + "_" + str(id) + '.txt')
+                    mutex.release()
                 datawrite.release()
             return
 
-
-        # print("acf pre")
         if (datawrite.acquire(True)):
-            # print("acfed pred")
-            # print(str(id) + ": " + jar + "  expr:======================================")
-            # print(instr + test)
-            # print(str(id) + ": out: ", end="")
-            # print(out)
             if (subresult != 0):
                 data[jar]['fail'] += 1
-                # print(str(id) + ":simplified out and correct-------------")
-                # print(str(test2))
-                # print(str(test1))
-                # print(str(id) + ":  err")
-                # print("acf pred")
                 if (mutex.acquire(True)):
-                    # print("acfed pred")
                     with open("./hacklist.txt", 'a') as f:
                         f.write(jar + '\ndata:-------------------------------\n')
                         f.write(str(instr) + str(test) + '\nright:\n')
                         f.write(str(test1) + '\nerr:\n' + out + '\n============================================\n')
                     mutex.release()
-
-                # print("errend=================================================")
-                # input()
             else:
                 data[jar]['pass'] += 1
-                # print(str(id) + ":simplified out and correct-------------")
-                # print(test2)
-                # print(test1)
-                # print("pass=================================================")
             global total
             print(total)
             total = total - 1
             data[jar]['tle'] -= 1
-            if([file for file in os.listdir('.') if ("tle_" + jar + "_" + str(id) + '.txt') in file]!=[]):
+            if ([file for file in os.listdir('.') if ("tle_" + jar + "_" + str(id) + '.txt') in file] != []):
                 os.remove("./tle_" + jar + "_" + str(id) + '.txt')
             datawrite.release()
 
@@ -375,7 +375,7 @@ def do(jar='hw1.jar'):
 
 
 import tkinter as tk
-from tkintertable import TableCanvas, TableModel
+from tkintertable import TableCanvas
 
 
 def tickerRedraw(tb, root):
@@ -389,22 +389,15 @@ def timeoutMain(jar, times, num):
     global total
     total = times
     if times <= num:
-        # tasks = [asyncio.create_task(do(jar)) for i in range(times)]
-        # for task in tasks:
-        #     await task
         t = [threading.Thread(target=do, args=(jar,)) for i in range(times)]
         for thread in t:
             thread.start()
         for tt in t:
             tt.join(3)
         for tt in t:
-            # print('actt')
             if datawrite.acquire(True):
                 if mutex.acquire(True):
-                    # print('actted')
-
                     if (tt.is_alive()):
-                        # print('force stop')
                         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tt.ident),
                                                                          ctypes.py_object(SystemExit))
                         if (res != 1):
@@ -420,7 +413,7 @@ def timeoutMain(jar, times, num):
                     while '' in manifest:
                         manifest.remove('')
                     pid = manifest[1]
-                    print('get parent pid',end='... ')
+                    print('get parent pid', end='... ')
                     with os.popen("wmic process where ProcessId=" + pid + " get ParentProcessId") as fathrer:
                         fatherpross = fathrer.read().split('\n')
                         while '' in fatherpross:
@@ -440,8 +433,6 @@ def timeoutMain(jar, times, num):
                         print(parentcheck[1] + "   ||||||||||   " + sys.argv[0])
                 except:
                     pass
-        files = os.listdir('.')
-        # errs = [file for file in files if '']
         exit(0)
     else:
         for i in range((times + num - 1) // num):
@@ -450,15 +441,15 @@ def timeoutMain(jar, times, num):
             t.join()
 
 
-def forjar(jars, ent,e2):
+def forjar(jars, ent, e2):
     for jar in jars:
         t = threading.Thread(target=timeoutMain, args=(jar, int(ent.get()), int(e2.get())))
         t.start()
         t.join()
 
 
-def trigTest(jars, ent,e2):
-    threading.Thread(target=forjar, args=(jars, ent,e2)).start()
+def trigTest(jars, ent, e2):
+    threading.Thread(target=forjar, args=(jars, ent, e2)).start()
 
 
 def window_thread(data, jars):
@@ -470,11 +461,11 @@ def window_thread(data, jars):
     e = tk.Entry(root)
     e.pack(side="left", fill='x', expand=True)
     e.insert(0, '100')
-    tk.Label(root,text="输入线程").pack(side='left')
+    tk.Label(root, text="输入线程").pack(side='left')
     e2 = tk.Entry(root)
     e2.pack(side="left", fill='x', expand=True)
-    e2.insert(0,'32')
-    b = tk.Button(root, text="run!", command=lambda: trigTest(jars, e,e2))
+    e2.insert(0, '32')
+    b = tk.Button(root, text="run!", command=lambda: trigTest(jars, e, e2))
     b.pack(side="right", fill='x', expand=True)
     tb = TableCanvas(frame, data=data)
     tb.show()
