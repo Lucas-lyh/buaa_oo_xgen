@@ -309,7 +309,8 @@ def do(jar='hw1.jar'):
             # print('acre pre')
             if mutex.acquire(True):
                 # print('acred pre')
-                os.remove("./tle_" + jar + "_" + str(id) + '.txt')
+                if([file for file in os.listdir('.') if "tle_" + jar + "_" + str(id) + '.txt' in file] != []):
+                    os.remove("./tle_" + jar + "_" + str(id) + '.txt')
                 with open('./re_' + jar + "_" + str(id) + '.txt', 'w') as f:
                     f.write(instr + test)
                 mutex.release()
