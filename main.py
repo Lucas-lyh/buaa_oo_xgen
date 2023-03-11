@@ -9,6 +9,7 @@ import sympy
 from sympy import symbols
 
 DEPTH = 4
+ITEM = 2
 
 
 class Generator:
@@ -278,7 +279,7 @@ def do(jar='hw1.jar'):
             instr += gen.function[name][1]
             instr += '\n'
 
-        test = gen.generateExpr(item=2, depth=DEPTH, varilist=['x', 'y', 'z'])
+        test = gen.generateExpr(item=ITEM, depth=DEPTH, varilist=['x', 'y', 'z'])
         time1 = time.time()
         try:
             correct = aSympify(test, locals=funclocals)
