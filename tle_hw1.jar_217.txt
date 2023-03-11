@@ -1,3 +1,0 @@
-1
-f(y)= ++ cos(1)
-dz(-+cos(x **3) *f(z) ++ cos(sin(cos(+3))) +cos(cos(f(0))))

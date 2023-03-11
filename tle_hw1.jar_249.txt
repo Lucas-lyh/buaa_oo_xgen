@@ -1,3 +1,0 @@
-1
-g(z)= cos(z)
-( -2 * sin((-+g(z **3) + +2) **2) *cos(cos(cos(z **4))) + -( + +g(z) *y** 3+ cos(z** 1)) *x+ cos(sin(sin(y)))) ** +2

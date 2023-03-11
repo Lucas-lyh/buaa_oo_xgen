@@ -1,5 +1,0 @@
-3
-f(z,x,y)= - + x
-h(z,y,x)= + + 4 -  sin(z)
-g(z)= - +-3
- -  (- + y * y**+1 * y+ -(   x** 1 *cos(x)*cos(sin(2))+- cos(g(y**+2)) * (+ sin(x)) **+3 -+ +4*cos(sin(y))) * sin((  x**+4)) -  g(sin(cos(+1))))

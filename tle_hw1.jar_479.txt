@@ -1,3 +1,0 @@
-1
-h(x,z,y)= cos(z) --sin(x**3)
- ++ sin(cos(+1))

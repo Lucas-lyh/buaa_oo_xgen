@@ -1,3 +1,0 @@
-1
-h(x,z,y)= + - cos(y) *x ** +4- sin(x**1) *cos(x ** 3)
- ++( --cos(0)+ cos(cos(cos(1))))**0

@@ -1,3 +1,0 @@
-1
-g(z)= -- cos(2)
- -sin(sin(cos(x ** 2)))* sin(2) + g(cos(y))
