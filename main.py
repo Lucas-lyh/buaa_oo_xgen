@@ -10,7 +10,7 @@ from sympy import symbols
 
 DEPTH = 4
 ITEM = 10
-
+MAXLEN = 150
 
 class Generator:
     x, y, z = symbols("x y z")
@@ -282,6 +282,9 @@ def do(jar='hw1.jar'):
             instr += '\n'
 
         test = gen.generateExpr(item=ITEM, depth=DEPTH, varilist=['x', 'y', 'z'])
+        checktest = test.replace(' ', '', -1)
+        if (len(checktest) > MAXLEN):
+            return
         time1 = time.time()
         try:
             correct = aSympify(test, locals=funclocals)
@@ -290,6 +293,7 @@ def do(jar='hw1.jar'):
         time_sympify = time.time() - time1
         if (len(str(correct.expand())) > 2000):
             return
+
         # print('ac pre')
         if mutex.acquire(True):
             # print('aced pre')
@@ -459,10 +463,11 @@ def forjar(jars, ent, e2):
         onlyOne.release()
 
 
-def trigTest(jars, ent, e2, edep, eitem):
-    global DEPTH, ITEM
+def trigTest(jars, ent, e2, edep, eitem,elen):
+    global DEPTH, ITEM,MAXLEN
     ITEM = int(eitem.get())
     DEPTH = int(edep.get())
+    MAXLEN = int(elen.get())
     t = threading.Thread(target=forjar, args=(jars, ent, e2))
     t.start()
 
@@ -497,8 +502,12 @@ def window_thread(data, jars):
     e4 = tk.Entry(frame3)
     e4.pack(side='left', fill='x', expand=True)
     e4.insert(0, '3')
+    tk.Label(frame3, text="最大长度：").pack(side='left')
+    e5 = tk.Entry(frame3)
+    e5.pack(side='left', fill='x', expand=True)
+    e5.insert(0, '150')
 
-    b = tk.Button(framebutton, text="run!", command=lambda: trigTest(jars, e, e2, e3, e4))
+    b = tk.Button(framebutton, text="run!", command=lambda: trigTest(jars, e, e2, e3, e4,e5))
     b.pack(side="right", fill='both', expand=True)
     tb = TableCanvas(frame, data=data)
     tb.show()
