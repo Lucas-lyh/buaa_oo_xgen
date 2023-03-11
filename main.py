@@ -447,15 +447,15 @@ def timeoutMain(jar, times, num):
             t.join()
 
 
-def forjar(jars, ent):
+def forjar(jars, ent,e2):
     for jar in jars:
-        t = threading.Thread(target=timeoutMain, args=(jar, int(ent.get()), 16))
+        t = threading.Thread(target=timeoutMain, args=(jar, int(ent.get()), int(e2.get())))
         t.start()
         t.join()
 
 
-def trigTest(jars, ent):
-    threading.Thread(target=forjar, args=(jars, ent)).start()
+def trigTest(jars, ent,e2):
+    threading.Thread(target=forjar, args=(jars, ent,e2)).start()
 
 
 def window_thread(data, jars):
@@ -467,7 +467,11 @@ def window_thread(data, jars):
     e = tk.Entry(root)
     e.pack(side="left", fill='x', expand=True)
     e.insert(0, '100')
-    b = tk.Button(root, text="run!", command=lambda: trigTest(jars, e))
+    tk.Label(root,text="输入线程").pack(side='left')
+    e2 = tk.Entry(root)
+    e2.pack(side="left", fill='x', expand=True)
+    e2.insert(0,'32')
+    b = tk.Button(root, text="run!", command=lambda: trigTest(jars, e,e2))
     b.pack(side="right", fill='x', expand=True)
     tb = TableCanvas(frame, data=data)
     tb.show()
