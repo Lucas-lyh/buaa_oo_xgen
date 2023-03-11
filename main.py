@@ -322,7 +322,7 @@ def do(jar='hw1.jar'):
         except:
             if datawrite.acquire(True):
                 data[jar]['tle'] -=1
-                if ([file for file in os.listdir('.') if "./tle_" + jar + "_" + str(id) + '.txt' in file] != []):
+                if ([file for file in os.listdir('.') if "tle_" + jar + "_" + str(id) + '.txt' in file] != []):
                     os.remove("./tle_" + jar + "_" + str(id) + '.txt')
                 datawrite.release()
             return
@@ -362,7 +362,7 @@ def do(jar='hw1.jar'):
             print(total)
             total = total - 1
             data[jar]['tle'] -= 1
-            if([file for file in os.listdir('.') if "./tle_" + jar + "_" + str(id) + '.txt' in file]!=[]):
+            if([file for file in os.listdir('.') if ("tle_" + jar + "_" + str(id) + '.txt') in file]!=[]):
                 os.remove("./tle_" + jar + "_" + str(id) + '.txt')
             datawrite.release()
 
