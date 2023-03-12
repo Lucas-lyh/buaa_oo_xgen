@@ -12,6 +12,7 @@ DEPTH = 4
 ITEM = 10
 MAXLEN = 150
 
+
 class Generator:
     x, y, z = symbols("x y z")
     function = {}
@@ -188,9 +189,9 @@ datawrite = threading.Lock()
 
 
 def execute_java(stdin, jar):
-    cmd = ['java', '-jar', jar]  # 更改为自己的.jar包名
+    cmd = ['java', '-jar',"-Xms128m", "-Xmx256m", jar]  # 更改为自己的.jar包名
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    stdout, stderr = proc.communicate(stdin.encode())
+    stdout, stderr = proc.communicate(stdin.encode(), timeout=5)
     return stdout.decode().strip()
 
 
@@ -227,10 +228,13 @@ def dz(x):
 
 idlock = threading.Lock()
 idnow = 0
-
-
+sp = threading.Semaphore(0)
 def do(jar='hw1.jar'):
+    print("lock"+str(sp._value))
     global data
+    def myret():
+        sp.release()
+        exit(0)
     try:
         gen = Generator()
 
@@ -284,14 +288,14 @@ def do(jar='hw1.jar'):
         test = gen.generateExpr(item=ITEM, depth=DEPTH, varilist=['x', 'y', 'z'])
         checktest = test.replace(' ', '', -1)
         if (len(checktest) > MAXLEN):
-            return
+            myret()
         time1 = time.time()
         try:
             correct = aSympify(test, locals=funclocals).expand()
         except Exception as e:
-            return
-        if (len(str(correct.expand())) > 2000):
-            return
+            myret()
+        if (len(str(correct)) > 2000):
+            myret()
 
         # print('ac pre')
         if mutex.acquire(True):
@@ -304,7 +308,10 @@ def do(jar='hw1.jar'):
             # print('aced pred')
             data[jar]['tle'] += 1
             datawrite.release()
-        out = execute_java(instr + test, jar)
+        try:
+            out = execute_java(instr + test, jar)
+        except:
+            myret()
         if ('java' in out):
             # print('acre pred')
             if datawrite.acquire(True):
@@ -320,7 +327,7 @@ def do(jar='hw1.jar'):
                 with open('./re_' + jar + "_" + str(id) + '.txt', 'w') as f:
                     f.write(instr + test)
                 mutex.release()
-            return
+            myret()
         try:
             check = aSympify(out, {})
         except:
@@ -338,7 +345,7 @@ def do(jar='hw1.jar'):
                         os.remove("./tle_" + jar + "_" + str(id) + '.txt')
                     mutex.release()
                 datawrite.release()
-            return
+            myret()
         try:
             test1 = correct
             test2 = check.expand()
@@ -351,7 +358,7 @@ def do(jar='hw1.jar'):
                         os.remove("./tle_" + jar + "_" + str(id) + '.txt')
                     mutex.release()
                 datawrite.release()
-            return
+            myret()
 
         if (datawrite.acquire(True)):
             if (subresult != 0):
@@ -371,11 +378,11 @@ def do(jar='hw1.jar'):
             if ([file for file in os.listdir('.') if ("tle_" + jar + "_" + str(id) + '.txt') in file] != []):
                 os.remove("./tle_" + jar + "_" + str(id) + '.txt')
             datawrite.release()
-
+        myret()
     except Exception as e:
         print(e.args)
         print("fatal error!!!!!!!!!!")
-        pass
+        myret()
 
 
 import tkinter as tk
@@ -392,65 +399,20 @@ def tickerRedraw(tb, root):
 
 
 def timeoutMain(jar, times, num):
-    global total
+    global total,sp
     total = times
-    if times <= num:
-        t = [threading.Thread(target=do, args=(jar,)) for i in range(times)]
-        for thread in t:
-            thread.start()
-        for tt in t:
-            tt.join(3)
-        for tt in t:
-            if datawrite.acquire(True):
-                if mutex.acquire(True):
-                    if (tt.is_alive()):
-                        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tt.ident),
-                                                                         ctypes.py_object(SystemExit))
-                        if (res != 1):
-                            print("fatal error!")
-                    mutex.release()
-                datawrite.release()
-        with os.popen('tasklist | findstr "java.exe"') as p:
-            javalist = p.read().split("\n")
-            javalist.remove("")
-            for javaprocess in javalist:
-                try:
-                    manifest = javaprocess.split(' ')
-                    while '' in manifest:
-                        manifest.remove('')
-                    pid = manifest[1]
-                    print('get parent pid', end='... ')
-                    with os.popen("wmic process where ProcessId=" + pid + " get ParentProcessId") as fathrer:
-                        fatherpross = fathrer.read().split('\n')
-                        while '' in fatherpross:
-                            fatherpross.remove("")
-                    print('get parent path')
-                    with os.popen(
-                            "wmic process where ProcessId=" + fatherpross[1] + " get ExecutablePath") as parentcheck:
-                        parentcheck = parentcheck.read().split('\n')
-                        while '' in parentcheck:
-                            parentcheck.remove('')
-                    if "python.exe" in parentcheck[1]:
-                        print("try to kill python's child")
-                        with os.popen("taskkill /f /pid " + pid) as closecmd:
-                            closecmd.read()
-                        print("close :" + pid)
-                    else:
-                        print(parentcheck[1] + "   ||||||||||   " + sys.argv[0])
-                except:
-                    pass
-        exit(0)
-    else:
-        for i in range((times + num - 1) // num):
-            if datawrite.acquire(True):
-                data['当前测试进度']['name'] = str(i * num) + '/' + str(times)
-                datawrite.release()
-            t = threading.Thread(target=timeoutMain, args=(jar, min(num, times - i * num), num))
-            t.start()
-            t.join()
-        if datawrite.acquire(True):
-            data["当前测试进度"]['name'] = 'finished'
+    sp = threading.Semaphore(num)
+    now = 0
+    while now <= times:
+        now += 1
+        if now%10==0 and datawrite.acquire(True):
+            data['当前测试进度']['name'] = str(now) + '/' + str(times)
             datawrite.release()
+        if sp.acquire(True):
+            threading.Thread(target=do, args=(jar,)).start()
+    if datawrite.acquire(True):
+        data["当前测试进度"]['name'] = 'finished'
+        datawrite.release()
 
 
 def forjar(jars, ent, e2):
@@ -462,8 +424,8 @@ def forjar(jars, ent, e2):
         onlyOne.release()
 
 
-def trigTest(jars, ent, e2, edep, eitem,elen):
-    global DEPTH, ITEM,MAXLEN
+def trigTest(jars, ent, e2, edep, eitem, elen):
+    global DEPTH, ITEM, MAXLEN
     ITEM = int(eitem.get())
     DEPTH = int(edep.get())
     MAXLEN = int(elen.get())
@@ -506,7 +468,7 @@ def window_thread(data, jars):
     e5.pack(side='left', fill='x', expand=True)
     e5.insert(0, '150')
 
-    b = tk.Button(framebutton, text="run!", command=lambda: trigTest(jars, e, e2, e3, e4,e5))
+    b = tk.Button(framebutton, text="run!", command=lambda: trigTest(jars, e, e2, e3, e4, e5))
     b.pack(side="right", fill='both', expand=True)
     tb = TableCanvas(frame, data=data)
     tb.show()
