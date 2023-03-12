@@ -300,6 +300,7 @@ def do(jar='hw1.jar'):
             del gen, funclocals
             myret()
         time1 = time.time()
+        correct =  0
         try:
             correct = aSympify(test, locals=funclocals).expand()
         except Exception as e:
@@ -320,6 +321,7 @@ def do(jar='hw1.jar'):
             # print('aced pred')
             data[jar]['tle'] += 1
             datawrite.release()
+        out = 0
         try:
             out = execute_java(instr + test, jar)
         except:
@@ -343,6 +345,7 @@ def do(jar='hw1.jar'):
                     f.write(instr + test)
                 mutex.release()
             myret()
+        check = 0
         try:
             check = aSympify(out, {})
         except:
@@ -365,6 +368,9 @@ def do(jar='hw1.jar'):
                     mutex.release()
                 datawrite.release()
             myret()
+        test1 = 0
+        test2 = 0
+        subresult = 0
         try:
             test1 = correct
             test2 = check.expand()
