@@ -191,7 +191,14 @@ datawrite = threading.Lock()
 def execute_java(stdin, jar):
     cmd = ['java', '-jar',"-Xms128m", "-Xmx256m", jar]  # 更改为自己的.jar包名
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    stdout, stderr = proc.communicate(stdin.encode(), timeout=5)
+    success = True
+    try:
+        stdout, stderr = proc.communicate(stdin.encode(), timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        success = False
+    if not success:
+        raise
     return stdout.decode().strip()
 
 
@@ -232,12 +239,13 @@ sp = threading.Semaphore(0)
 def do(jar='hw1.jar'):
     print("lock"+str(sp._value))
     global data
+    gen = Generator()
     def myret():
         sp.release()
+        #del gen,funclocals
+        #del funclocals
         exit(0)
     try:
-        gen = Generator()
-
         def f():
             return 0
 
@@ -288,11 +296,15 @@ def do(jar='hw1.jar'):
         test = gen.generateExpr(item=ITEM, depth=DEPTH, varilist=['x', 'y', 'z'])
         checktest = test.replace(' ', '', -1)
         if (len(checktest) > MAXLEN):
+            del test,checktest
+            del gen, funclocals
             myret()
         time1 = time.time()
         try:
             correct = aSympify(test, locals=funclocals).expand()
         except Exception as e:
+            del correct
+            del gen, funclocals
             myret()
         if (len(str(correct)) > 2000):
             myret()
@@ -311,6 +323,9 @@ def do(jar='hw1.jar'):
         try:
             out = execute_java(instr + test, jar)
         except:
+            del test, checktest
+            del out
+            del gen, funclocals
             myret()
         if ('java' in out):
             # print('acre pred')
@@ -331,6 +346,10 @@ def do(jar='hw1.jar'):
         try:
             check = aSympify(out, {})
         except:
+            del test, checktest
+            del out
+            del gen, funclocals
+            del check
             if (datawrite.acquire(True)):
                 data[jar]['fail'] += 1
                 if (mutex.acquire(True)):
@@ -351,6 +370,11 @@ def do(jar='hw1.jar'):
             test2 = check.expand()
             subresult = (test1 - test2).simplify()
         except:
+            del test, checktest
+            del out
+            del gen, funclocals
+            del check
+            del test1,test2,subresult
             if datawrite.acquire(True):
                 if mutex.acquire(True):
                     data[jar]['tle'] -= 1
@@ -378,6 +402,11 @@ def do(jar='hw1.jar'):
             if ([file for file in os.listdir('.') if ("tle_" + jar + "_" + str(id) + '.txt') in file] != []):
                 os.remove("./tle_" + jar + "_" + str(id) + '.txt')
             datawrite.release()
+        del test, checktest
+        del out
+        del gen, funclocals
+        del check
+        del test1, test2, subresult
         myret()
     except Exception as e:
         print(e.args)
@@ -396,7 +425,7 @@ def tickerRedraw(tb, root):
     tb.redraw()
 
     root.after(3000, tickerRedraw, tb, root)
-
+import gc
 
 def timeoutMain(jar, times, num):
     global total,sp
@@ -410,6 +439,7 @@ def timeoutMain(jar, times, num):
             datawrite.release()
         if sp.acquire(True):
             threading.Thread(target=do, args=(jar,)).start()
+        gc.collect()
     if datawrite.acquire(True):
         data["当前测试进度"]['name'] = 'finished'
         datawrite.release()
