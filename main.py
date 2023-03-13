@@ -3,10 +3,14 @@ import ctypes
 import random
 import subprocess
 import sys
+import cProfile
 import tkinter
 
 import sympy
 from sympy import symbols
+import heartrate
+
+
 
 DEPTH = 4
 ITEM = 10
@@ -218,9 +222,6 @@ def getlocals(varilistori):
     return res
 
 
-import asyncio
-
-
 def dx(x):
     return sympy.diff(x, sympy.symbols('x'))
 
@@ -232,12 +233,13 @@ def dy(x):
 def dz(x):
     return sympy.diff(x, sympy.symbols('z'))
 
-
+from importlib import reload
 idlock = threading.Lock()
 idnow = 0
 sp = threading.Semaphore(0)
 def do(jar='hw1.jar'):
-    print("lock"+str(sp._value))
+    import sympy
+  #  print("lock"+str(sp._value))
     global data
     gen = Generator()
     def myret():
@@ -296,7 +298,7 @@ def do(jar='hw1.jar'):
         test = gen.generateExpr(item=ITEM, depth=DEPTH, varilist=['x', 'y', 'z'])
         checktest = test.replace(' ', '', -1)
         if (len(checktest) > MAXLEN):
-            del test,checktest
+            del sympy,test,checktest
             del gen, funclocals
             myret()
         time1 = time.time()
@@ -304,7 +306,7 @@ def do(jar='hw1.jar'):
         try:
             correct = aSympify(test, locals=funclocals).expand()
         except Exception as e:
-            del correct
+            del sympy,correct
             del gen, funclocals
             myret()
         if (len(str(correct)) > 2000):
@@ -326,7 +328,7 @@ def do(jar='hw1.jar'):
             out = execute_java(instr + test, jar)
         except:
             del test, checktest
-            del out
+            del out,sympy
             del gen, funclocals
             myret()
         if ('java' in out):
@@ -345,7 +347,7 @@ def do(jar='hw1.jar'):
                     f.write(instr + test)
                 mutex.release()
             del test, checktest
-            del out
+            del out,sympy
             del gen, funclocals
             myret()
         check = 0
@@ -367,7 +369,7 @@ def do(jar='hw1.jar'):
                     mutex.release()
                 datawrite.release()
             del test, checktest
-            del out
+            del out,sympy
             del gen, funclocals
             del check
             myret()
@@ -380,7 +382,7 @@ def do(jar='hw1.jar'):
             subresult = (test1 - test2).simplify()
         except:
             del test, checktest
-            del out
+            del out,sympy
             del gen, funclocals
             del check
             del test1,test2,subresult
@@ -405,14 +407,14 @@ def do(jar='hw1.jar'):
             else:
                 data[jar]['pass'] += 1
             global total
-            print(total)
+          #  print(total)
             total = total - 1
             data[jar]['tle'] -= 1
             if ([file for file in os.listdir('.') if ("tle_" + jar + "_" + str(id) + '.txt') in file] != []):
                 os.remove("./tle_" + jar + "_" + str(id) + '.txt')
             datawrite.release()
         del test, checktest
-        del out
+        del out,sympy
         del gen, funclocals
         del check
         del test1, test2, subresult
@@ -457,9 +459,8 @@ def timeoutMain(jar, times, num):
 def forjar(jars, ent, e2):
     if onlyOne.acquire(True, timeout=1):
         for jar in jars:
-            t = threading.Thread(target=timeoutMain, args=(jar, int(ent.get()), int(e2.get())))
-            t.start()
-            t.join()
+            timeoutMain(jar, int(ent.get()), int(e2.get()))
+
         onlyOne.release()
 
 
@@ -517,8 +518,8 @@ def window_thread(data, jars):
 
 data = {}
 
-
-async def main(jars):
+jars = []
+def main():
     for jar in jars:
         data[jar] = {'name': jar, 'pass': 0, 'fail': 0, 'tle': 0, 're': 0}
     data['当前测试进度'] = {'name': "0/0"}
@@ -528,10 +529,12 @@ async def main(jars):
 import time
 import os
 
+
+
 if __name__ == '__main__':
     files = os.listdir('.')
     jars = [file for file in files if os.path.splitext(file)[-1] == '.jar']
     time1 = time.time()
-    asyncio.run(main(jars))
+    cProfile.run('main()')
     time2 = time.time()
     print("start time: " + str(time2 - time1))
