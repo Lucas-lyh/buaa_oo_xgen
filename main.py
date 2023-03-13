@@ -344,15 +344,14 @@ def do(jar='hw1.jar'):
                 with open('./re_' + jar + "_" + str(id) + '.txt', 'w') as f:
                     f.write(instr + test)
                 mutex.release()
+            del test, checktest
+            del out
+            del gen, funclocals
             myret()
         check = 0
         try:
             check = aSympify(out, {})
         except:
-            del test, checktest
-            del out
-            del gen, funclocals
-            del check
             if (datawrite.acquire(True)):
                 data[jar]['fail'] += 1
                 if (mutex.acquire(True)):
@@ -367,6 +366,10 @@ def do(jar='hw1.jar'):
                         os.remove("./tle_" + jar + "_" + str(id) + '.txt')
                     mutex.release()
                 datawrite.release()
+            del test, checktest
+            del out
+            del gen, funclocals
+            del check
             myret()
         test1 = 0
         test2 = 0
