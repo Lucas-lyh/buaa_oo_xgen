@@ -294,7 +294,7 @@ def do(jar='hw1.jar'):
             instr += "="
             instr += gen.function[name][1]
             instr += '\n'
-
+        test=""
         test = gen.generateExpr(item=ITEM, depth=DEPTH, varilist=['x', 'y', 'z'])
         checktest = test.replace(' ', '', -1)
         if (len(checktest) > MAXLEN):
@@ -535,6 +535,9 @@ if __name__ == '__main__':
     files = os.listdir('.')
     jars = [file for file in files if os.path.splitext(file)[-1] == '.jar']
     time1 = time.time()
-    cProfile.run('main()')
+    main()
     time2 = time.time()
     print("start time: " + str(time2 - time1))
+    while True:
+        time.sleep(10)
+        pass
