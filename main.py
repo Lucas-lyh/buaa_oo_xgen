@@ -476,6 +476,7 @@ def trigTest(jars, ent, e2, edep, eitem, elen):
 def window_thread(data, jars):
     root = tk.Tk()
     root.geometry("1024x500")
+    root.titla("Xgen v2.1")
     frame = tkinter.Frame(root)
     frame.pack(fill="both", expand=True)
 
