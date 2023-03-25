@@ -54,7 +54,7 @@ import psutil
 
 def execute_java(ori, jar, conn):
     time.sleep(1)
-    cmdjava = ['H:\\java\\jdk1.8\\bin\\java.exe', '-jar', "-Xms64m", "-Xmx256m", jar]
+    cmdjava = ['java', '-jar', "-Xms64m", "-Xmx256m", jar]
     procjava = subprocess.Popen(cmdjava, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     input = procjava.stdin
     output = procjava.stdout
