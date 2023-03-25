@@ -1,16 +1,9 @@
 # -*- coding:utf-8 -*-
-import ctypes
 import multiprocessing
 import random
 import subprocess
-import sys
-import cProfile
 import tkinter
 from multiprocessing import Process
-
-from sympy import symbols
-import heartrate
-
 import threading
 
 idlock = threading.Lock()
@@ -61,7 +54,7 @@ import psutil
 
 def execute_java(ori, jar, conn):
     time.sleep(1)
-    cmdjava = ['java', '-jar', "-Xms64m", "-Xmx256m", jar]
+    cmdjava = ['H:\\java\\jdk1.8\\bin\\java.exe', '-jar', "-Xms64m", "-Xmx256m", jar]
     procjava = subprocess.Popen(cmdjava, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     input = procjava.stdin
     output = procjava.stdout
