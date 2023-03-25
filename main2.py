@@ -371,6 +371,7 @@ def window_thread(data, jars):
     tb = TableCanvas(frame, data=data)
     tb.show()
     tickerRedraw(tb, root)
+    root.wm_title('xgenerator-u2-v1.1')
     root.mainloop()
 
 
