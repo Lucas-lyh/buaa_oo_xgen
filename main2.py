@@ -1,10 +1,12 @@
 # -*- coding:utf-8 -*-
 import ctypes
+import multiprocessing
 import random
 import subprocess
 import sys
 import cProfile
 import tkinter
+from multiprocessing import Process
 
 from sympy import symbols
 import heartrate
@@ -26,7 +28,7 @@ id = 0
 class Generator:
     def genData(self):
         thisid = 0
-        num = random.choice(range(ITEM)) + 1
+        num = random.choice(range(int(ITEM / 2), ITEM)) + 1
         sameitem = random.choice(range(SAMETIME)) + 1
         timelimit = random.choice(range(MAXTIME)) + 1
         time = 0.2
@@ -43,43 +45,50 @@ class Generator:
                 second = random.choice(secondrange)
                 thisid += 1
                 res.append("[{:.2f}]{}-FROM-{}-TO-{}".format(time, thisid, first, second))
-                ori.append({'id': thisid, 'from': first, 'to': second})
+                ori.append({'gap': gap, 'id': thisid, 'from': first, 'to': second, 'n': n})
             time += gap
         return (res, '\n'.join(res), ori)
 
-
-import threading
 
 num = 0
 
 datawrite = threading.Lock()
 
+startGapLock = threading.Lock()
+
 import psutil
 
-def execute_java(stdin, jar):
-    with open('out_' + stdin, 'w') as f:
-        cmd = ['datainput.exe', stdin]  # 更改为自己的.jar包名
-        cmdjava = ['java', '-jar', "-Xms64m", "-Xmx256m", jar]
-        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        procjava = subprocess.Popen(cmdjava, stdin=proc.stdout, stdout=f,stderr=f)
-        success = True
-        try:
-            print(1)
-            stdout= procjava.communicate(''.encode(),timeout=40)
-        except subprocess.TimeoutExpired:
-            os.system("TASKKILL /F /T /PID "+str(proc.pid))
+
+def execute_java(ori, jar, conn):
+    time.sleep(1)
+    cmdjava = ['java', '-jar', "-Xms64m", "-Xmx256m", jar]
+    procjava = subprocess.Popen(cmdjava, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    input = procjava.stdin
+    output = procjava.stdout
+    n = 0
+    for item in ori:
+        if n == 0:
+            n = item['n']
+            # print(item['gap'])
+            time.sleep(item['gap'])
+        n -= 1
+        input.write("{}-FROM-{}-TO-{}\n".format(item['id'], item['from'], item['to']).encode())
+        # print("{}-FROM-{}-TO-{}".format(item['id'], item['from'], item['to']))
+    input.close()
+    success = True
+    try:
+        print(1)
+        procjava.wait(timeout=40)
+    except subprocess.TimeoutExpired:
+        os.system("TASKKILL /F /T /PID " + str(procjava.pid))
+        time.sleep(1)
+        while procjava.pid in psutil.pids():
+            time.sleep(0.5)
             os.system("TASKKILL /F /T /PID " + str(procjava.pid))
-            while proc.pid in psutil.pids():
-                time.sleep(0.5)
-                os.system("TASKKILL /F /T /PID "+str(proc.pid))
-            while procjava.pid in psutil.pids():
-                    time.sleep(0.5)
-                    os.system("TASKKILL /F /T /PID " + str(procjava.pid))
-            success = False
-    with open('out_' + stdin, 'r') as f:
-        res = f.read()
-    os.remove('out_' + stdin)
-    return res, success
+        success = False
+    res = output.read().decode()
+    conn.send((res, success))
+    conn.close()
 
 
 def safeaddtle(jar):
@@ -243,7 +252,11 @@ def do(jar='hw1.jar'):
     stdin = str(thisid) + "input.txt"
     with open(stdin, 'w') as f:
         f.write(input)
-    res, success = execute_java(stdin, jar)
+    parentconn, javaconn = multiprocessing.Pipe()
+    process = Process(target=execute_java, args=(ori, jar, javaconn))
+    process.start()
+    process.join()
+    res, success = parentconn.recv()
     if ('java' in res):
         safeaddre(jar)
         os.rename(stdin, 're_' + stdin)
