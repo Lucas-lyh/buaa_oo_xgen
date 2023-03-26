@@ -55,8 +55,8 @@ import psutil
 def execute_java(ori, jar, conn):
     time.sleep(1)
     cmdjava = ['java', '-jar', "-Xms64m", "-Xmx256m", jar]
-    procjava = subprocess.Popen(cmdjava, stdin=subprocess.PIPE,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    stdout = procjava.stdout
+    procjava = subprocess.Popen(cmdjava, stdin=subprocess.PIPE, stderr=subprocess.STDOUT,stdout=subprocess.PIPE)
+    res = ''
     input = procjava.stdin
     n = 0
     res = ''
@@ -73,20 +73,17 @@ def execute_java(ori, jar, conn):
 
     success = True
     try:
-        time0 = time.time()
-        while procjava.pid in psutil.pids():
-            print('check running: '+str(procjava.pid))
-            if(time.time()-time0>40):
-                raise subprocess.TimeoutExpired('java',40)
-            time.sleep(1)
+        res,b = procjava.communicate(timeout=40)
     except subprocess.TimeoutExpired:
+        res, b = procjava.communicate()
         os.system("TASKKILL /F /T /PID " + str(procjava.pid))
         time.sleep(1)
         while procjava.pid in psutil.pids():
+            print(2)
             time.sleep(0.5)
             os.system("TASKKILL /F /T /PID " + str(procjava.pid))
         success = False
-    res = stdout.read().decode()
+    res = res.decode()
     conn.send((res, success))
     conn.close()
 
