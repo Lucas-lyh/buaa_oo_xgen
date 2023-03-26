@@ -56,8 +56,8 @@ def execute_java(ori, jar, conn):
     time.sleep(1)
     cmdjava = ['java', '-jar', "-Xms64m", "-Xmx256m", jar]
     procjava = subprocess.Popen(cmdjava, stdin=subprocess.PIPE,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    stdout = procjava.stdout
     input = procjava.stdin
-    output = procjava.stdout
     n = 0
     res = ''
     for item in ori:
@@ -86,7 +86,7 @@ def execute_java(ori, jar, conn):
             time.sleep(0.5)
             os.system("TASKKILL /F /T /PID " + str(procjava.pid))
         success = False
-    res += output.read().decode()
+    res = stdout.read().decode()
     conn.send((res, success))
     conn.close()
 
@@ -282,8 +282,6 @@ def do(jar='hw1.jar'):
         sp.release()
         return
     os.remove(stdin)
-    with open('out_'+stdin,'w') as f:
-        f.write(res)
     safeaddsuccess(jar)
     sp.release()
     return
