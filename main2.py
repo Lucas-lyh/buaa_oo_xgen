@@ -55,10 +55,11 @@ import psutil
 def execute_java(ori, jar, conn):
     time.sleep(1)
     cmdjava = ['java', '-jar', "-Xms64m", "-Xmx256m", jar]
-    procjava = subprocess.Popen(cmdjava, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    procjava = subprocess.Popen(cmdjava, stdin=subprocess.PIPE,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     input = procjava.stdin
     output = procjava.stdout
     n = 0
+    res = ''
     for item in ori:
         if n == 0:
             n = item['n']
@@ -66,12 +67,13 @@ def execute_java(ori, jar, conn):
             time.sleep(item['gap'])
         n -= 1
         input.write("{}-FROM-{}-TO-{}\n".format(item['id'], item['from'], item['to']).encode())
+        input.flush()
         # print("{}-FROM-{}-TO-{}".format(item['id'], item['from'], item['to']))
     input.close()
     success = True
     try:
         print(1)
-        procjava.wait(timeout=40)
+        procjava.wait(timeout=50)
     except subprocess.TimeoutExpired:
         os.system("TASKKILL /F /T /PID " + str(procjava.pid))
         time.sleep(1)
@@ -79,7 +81,7 @@ def execute_java(ori, jar, conn):
             time.sleep(0.5)
             os.system("TASKKILL /F /T /PID " + str(procjava.pid))
         success = False
-    res = output.read().decode()
+    res += output.read().decode()
     conn.send((res, success))
     conn.close()
 
@@ -274,7 +276,9 @@ def do(jar='hw1.jar'):
             f.write(res)
         sp.release()
         return
-    os.remove(stdin)
+    #os.remove(stdin)
+    with open('out_'+stdin,'w') as f:
+        f.write(res)
     safeaddsuccess(jar)
     sp.release()
     return
