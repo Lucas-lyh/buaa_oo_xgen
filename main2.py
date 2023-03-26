@@ -276,7 +276,7 @@ def do(jar='hw1.jar'):
             f.write(res)
         sp.release()
         return
-    #os.remove(stdin)
+    os.remove(stdin)
     with open('out_'+stdin,'w') as f:
         f.write(res)
     safeaddsuccess(jar)
