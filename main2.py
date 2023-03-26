@@ -21,15 +21,15 @@ id = 0
 class Generator:
     def genData(self):
         thisid = 0
-        num = random.choice(range(int(ITEM / 2), ITEM)) + 1
+        num = random.choice(range(int(ITEM / 2), ITEM,1)) + 1
         sameitem = random.choice(range(SAMETIME)) + 1
-        timelimit = random.choice(range(MAXTIME)) + 1
-        time = 0.2
+        timelimit = random.choice(range(MAXTIME)) + 2
+        time = 1
         res = []
         ori = []
 
         while (time < timelimit and len(res) < num):
-            gap = random.random() * (timelimit * 4 / (float(num) / sameitem))
+            gap = random.random() * (timelimit * 3 / (float(num) / sameitem))
             n = random.choice(range(sameitem)) + 1
             for i in range(n):
                 first = random.choice(LEVELS)
@@ -56,10 +56,8 @@ def execute_java(ori, jar, conn):
     time.sleep(1)
     cmdjava = ['java', '-jar', "-Xms64m", "-Xmx256m", jar]
     procjava = subprocess.Popen(cmdjava, stdin=subprocess.PIPE, stderr=subprocess.STDOUT,stdout=subprocess.PIPE)
-    res = ''
     input = procjava.stdin
     n = 0
-    res = ''
     for item in ori:
         if n == 0:
             n = item['n']
@@ -85,8 +83,9 @@ def execute_java(ori, jar, conn):
             os.system("TASKKILL /F /T /PID " + str(procjava.pid))
         success = False
     res = res.decode()
-    conn.send((res, success))
-    conn.close()
+    print(res,success)
+    conn['res']=res
+    conn['success']=success
 
 
 def safeaddtle(jar):
@@ -247,14 +246,18 @@ def do(jar='hw1.jar'):
         idlock.release()
     g = Generator()
     oril, input, ori = g.genData()
+    if len(ori)==0:
+        return
     stdin = str(thisid) + "input.txt"
     with open(stdin, 'w') as f:
         f.write(input)
-    parentconn, javaconn = multiprocessing.Pipe()
-    process = Process(target=execute_java, args=(ori, jar, javaconn))
-    process.start()
-    process.join()
-    res, success = parentconn.recv()
+    with multiprocessing.Manager() as m:
+        result = m.dict({'res':'','success':False})
+        process = Process(target=execute_java, args=(ori, jar, result))
+        process.start()
+        process.join()
+        res = result['res']
+        success = result['success']
     if ('java' in res):
         safeaddre(jar)
         os.rename(stdin, 're_' + stdin)
@@ -313,7 +316,6 @@ def timeoutMain(jar, times, num):
             datawrite.release()
         if sp.acquire(True):
             threading.Thread(target=do, args=(jar,)).start()
-        gc.collect()
     if datawrite.acquire(True):
         data["当前测试进度"]['name'] = 'finished'
         datawrite.release()
