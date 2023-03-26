@@ -75,6 +75,7 @@ def execute_java(ori, jar, conn):
     try:
         res,b = procjava.communicate(timeout=40)
     except subprocess.TimeoutExpired:
+        procjava.kill()
         res, b = procjava.communicate()
         os.system("TASKKILL /F /T /PID " + str(procjava.pid))
         time.sleep(1)
@@ -375,7 +376,7 @@ def window_thread(data, jars):
     tb = TableCanvas(frame, data=data)
     tb.show()
     tickerRedraw(tb, root)
-    root.wm_title('xgenerator-u2-v1.1')
+    root.wm_title('xgenerator-u2-v2.0')
     root.mainloop()
 
 
