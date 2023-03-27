@@ -191,6 +191,8 @@ def check(ori, out):
                 return ('wa', "take passenger on wrong level on" + str(linenum))
             if filterinput['taked']:
                 return ('wa', 'retake passenger on' + str(linenum))
+            if len(elepassenger[eleid])>=6:
+                return ('wa', 'passenger is too much! no.'+str(eleid)+' elevator is alread have 6 passenger at '+str(linenum))
             filterinput['taked'] = True
             elepassenger[eleid].append(passid)
             eletime[eleid] = dtime
@@ -378,7 +380,7 @@ def window_thread(data, jars):
     tb = TableCanvas(frame, data=data)
     tb.show()
     tickerRedraw(tb, root)
-    root.wm_title('xgenerator-u2-v2.0')
+    root.wm_title('xgenerator-u2-v2.0.1-fix:电梯超载')
     root.mainloop()
 
 
