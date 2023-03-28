@@ -122,7 +122,7 @@ def check(ori, out):
     for x in ori:
         x['taked'] = False
     elelevel = {x: 1 for x in ELEVATORNUMBERID}
-    eletime = {x: 0 for x in ELEVATORNUMBERID}
+    eletime = {x: -0.4 for x in ELEVATORNUMBERID}
     eleopen = {x: False for x in ELEVATORNUMBERID}
     eleopentime = {x: 0 for x in ELEVATORNUMBERID}
     elepassenger = {x: [] for x in ELEVATORNUMBERID}
