@@ -5,6 +5,7 @@ import subprocess
 import tkinter
 from multiprocessing import Process
 import threading
+from settings import *
 
 idlock = threading.Lock()
 
@@ -27,20 +28,47 @@ class Generator:
         time = 1
         res = []
         ori = []
+        elevator_info = [{'id': i, 'speed':0.4, 'capacity': 6, 'maintained': False} for i in range(1,7)]
+        elevator_size = 6
+        running_elevator = 6
+        maintain_info = []
+        maintain_set = list(range(ELEVATOR_MIN_SIZE + 1, 7))
 
         while (time < timelimit and len(res) < num):
             gap = random.random() * (timelimit * 3 / (float(num) / sameitem))
             n = random.choice(range(sameitem)) + 1
+
+            if (random.random() < 0.4 and elevator_size < ELEVATOR_MAX_ALLOCATED):
+                n -= 1
+                if (random.random() < 0.5 or running_elevator <= 2) and elevator_size < ELEVATOR_MAX_SIZE:
+                    elevator_size += 1
+                    running_elevator += 1
+                    maintain_set.append(elevator_size)
+                    speed = random.choice(ELEVATOR_SPEED_LIST)
+                    capacity = random.choice(ELEVATOR_CAPACITY_LIST)
+                    starting_floor = 1
+                    elevator_info.append({'id': elevator_size, 'speed': speed, 'capacity': capacity, 'maintained': False})
+                    res.append("[{:.1f}]ADD-Elevator-{}-{}-{}-{:.1f}".format(time, elevator_size, starting_floor, capacity, speed))
+                    maintain_info.append({'id': elevator_size, 'time': time, 'action': 'ADD', 'functioned': False})
+                elif (running_elevator > 2):
+                    running_elevator -= 1
+                    if len(maintain_set) == 0:
+                        print("error" + str(len(res)))
+                    mid = random.choice(maintain_set)
+                    maintain_set.remove(mid)
+                    res.append("[{:.1f}]MAINTAIN-Elevator-{}".format(time, mid))
+                    maintain_info.append({'id': mid, 'time': time, 'action': 'MAINTAIN', 'functioned': False})
+
             for i in range(n):
                 first = random.choice(LEVELS)
                 secondrange = [x for x in LEVELS]
                 secondrange.remove(first)
                 second = random.choice(secondrange)
                 thisid += 1
-                res.append("[{:.2f}]{}-FROM-{}-TO-{}".format(time, thisid, first, second))
+                res.append("[{:.1f}]{}-FROM-{}-TO-{}".format(time, thisid, first, second))
                 ori.append({'gap': gap, 'id': thisid, 'from': first, 'to': second, 'n': n})
             time += gap
-        return (res, '\n'.join(res), ori)
+        return (res, '\n'.join(res), ori, elevator_info, maintain_info)
 
 
 num = 0
@@ -52,22 +80,31 @@ startGapLock = threading.Lock()
 import psutil
 
 
-def execute_java(ori, jar, conn):
+def execute_java(oris, jar, conn):
     time.sleep(1)
-    cmdjava = ['java', '-jar', "-Xms64m", "-Xmx256m", jar]
+    cmdjava = [JAVA_PATH, '-jar', "-Xms64m", "-Xmx256m", jar]
     procjava = subprocess.Popen(cmdjava, stdin=subprocess.PIPE, stderr=subprocess.STDOUT,stdout=subprocess.PIPE)
-    input = procjava.stdin
+    reinput = procjava.stdin
     n = 0
-    for item in ori:
-        if n == 0:
-            n = item['n']
-            # print(item['gap'])
-            time.sleep(item['gap'])
-        n -= 1
-        input.write("{}-FROM-{}-TO-{}\n".format(item['id'], item['from'], item['to']).encode())
-        input.flush()
+    lt = 0
+    # assert procjava.poll() is None
+    assert isinstance(oris, str)
+    for item in oris.split(sep='\n'):
+        sleep_time = float(item.split(sep='[')[1].split(sep=']')[0]) - lt
+        time.sleep(sleep_time)
+        lt += sleep_time
+        # print(sleep_time, item.split(sep=']')[1].encode())
+        reinput.write(str(item.split(sep=']')[1]+'\n').encode())
+        reinput.flush()
+        # if n == 0:
+        #     n = item['n']
+        #     # print(item['gap'])
+        #     time.sleep(item['gap'])
+        # n -= 1
+        # input.write("{}-FROM-{}-TO-{}\n".format(item['id'], item['from'], item['to']).encode())
+        # input.flush()
         # print("{}-FROM-{}-TO-{}".format(item['id'], item['from'], item['to']))
-    input.close()
+    reinput.close()
 
     success = True
     try:
@@ -112,21 +149,26 @@ def safeaddwa(jar):
         datawrite.release()
 
 
-from importlib import reload
 
 idnow = 0
 sp = threading.Semaphore(0)
 
 
-def check(ori, out):
+def check(ori, out, elevator_list, maintain_list):
     for x in ori:
         x['taked'] = False
+    ELEVATORNUMBERID = [x['id'] for x in elevator_list]
+    elevator_usable = {x: True if x < 7 else False for x in ELEVATORNUMBERID}
+    elevator_speed = {x['id']: x['speed'] for x in elevator_list}
+    maintain_counter = {x: 0 for x in ELEVATORNUMBERID}
+    elevator_capacity = {x['id']: x['capacity'] for x in elevator_list}
     elelevel = {x: 1 for x in ELEVATORNUMBERID}
     eletime = {x: -0.4 for x in ELEVATORNUMBERID}
     eleopen = {x: False for x in ELEVATORNUMBERID}
     eleopentime = {x: 0 for x in ELEVATORNUMBERID}
     elepassenger = {x: [] for x in ELEVATORNUMBERID}
     linenum = 0
+    mainlist_it = 0
     for line in out.split('\n'):
         linenum += 1
         line.strip(' ')
@@ -137,15 +179,26 @@ def check(ori, out):
         things = things.split('-')
         type = things[0]
         eleid = int(things[-1])
-        if not eleid in ELEVATORNUMBERID:
+        while mainlist_it < len(maintain_list) and maintain_list[mainlist_it]['time'] < dtime:
+            if maintain_list[mainlist_it]['action'] == 'ADD':
+                elevator_usable[maintain_list[mainlist_it]['id']] = True
+                maintain_list[mainlist_it]['functioned'] = True
+            mainlist_it += 1
+
+        if (not eleid in ELEVATORNUMBERID) or not elevator_usable[eleid]:
             return 'wa', 'wrong elevator in on' + str(linenum)
+
         if type == 'ARRIVE':
+            if (maintain_counter[eleid] == 1):
+                return 'wa', 'able too slow on' + str(linenum)
+            if (maintain_counter[eleid] > 0):
+                maintain_counter[eleid] -= 1
             if (len(things) != 3):
                 return ("wa", "error output on" + str(linenum))
             level = int(things[1])
             if abs(level - elelevel[eleid]) != 1:
                 return ('wa', "error move gap on" + str(linenum))
-            if (dtime - eletime[eleid] < 0.399):
+            if (dtime - eletime[eleid] < elevator_speed[eleid] - 0.001):
                 return ('wa', "move too fast on line" + str(linenum))
             elelevel[eleid] = level
             eletime[eleid] = dtime
@@ -191,7 +244,7 @@ def check(ori, out):
                 return ('wa', "take passenger on wrong level on" + str(linenum))
             if filterinput['taked']:
                 return ('wa', 'retake passenger on' + str(linenum))
-            if len(elepassenger[eleid])>=6:
+            if len(elepassenger[eleid]) >= elevator_capacity[eleid]:
                 return ('wa', 'passenger is too much! no.'+str(eleid)+' elevator is alread have 6 passenger at '+str(linenum))
             filterinput['taked'] = True
             elepassenger[eleid].append(passid)
@@ -233,9 +286,25 @@ def check(ori, out):
             filterinput['taked'] = True
             elepassenger[eleid].append(passid)
             eletime[eleid] = dtime
+        elif type == "MAINTAIN":
+            if (len(things) != 3):
+                return ("wa", "error output on" + str(linenum))
+            mtype = things[1]
+            if mtype == "ACCEPT":
+                maintain_counter[eleid] = 3
+            elif mtype == "ABLE":
+                maintain_counter[eleid] = 0
+                elevator_usable[eleid] = False
+                for x in maintain_list:
+                    if x['id'] == eleid and x['action'] == "MAINTAIN":
+                        x['functioned'] = True
+
     for oriitem in ori:
         if oriitem['from'] != oriitem['to']:
             return ("wa", "passenger {} not arrive, at {}".format(oriitem['id'], oriitem['from']))
+    for manitem in maintain_list:
+        if manitem['functioned'] == False:
+            return ("wa", "{} elevator {} not functioned".format(manitem['action'], manitem['id']))
     return ('ac', 'pass all')
 
 
@@ -247,7 +316,7 @@ def do(jar='hw1.jar'):
         id += 1
         idlock.release()
     g = Generator()
-    oril, input, ori = g.genData()
+    oril, input, ori, elevator_list, maintain_list = g.genData()
     if len(ori)==0:
         return
     stdin = str(thisid) + "input.txt"
@@ -255,7 +324,7 @@ def do(jar='hw1.jar'):
         f.write(input)
     with multiprocessing.Manager() as m:
         result = m.dict({'res':'','success':False})
-        process = Process(target=execute_java, args=(ori, jar, result))
+        process = Process(target=execute_java, args=(input, jar, result))
         process.start()
         process.join()
         res = result['res']
@@ -274,7 +343,7 @@ def do(jar='hw1.jar'):
             f.write(res)
         sp.release()
         return
-    checkResult, reason = check(ori, res)
+    checkResult, reason = check(ori, res, elevator_list, maintain_list)
     if checkResult == 'wa':
         safeaddwa(jar)
         os.rename(stdin, 'wa_' + stdin)
@@ -380,7 +449,7 @@ def window_thread(data, jars):
     tb = TableCanvas(frame, data=data)
     tb.show()
     tickerRedraw(tb, root)
-    root.wm_title('xgenerator-u2-v2.0.1-fix:电梯超载')
+    root.wm_title('xgenerator-u2-v3.0.0-alpha:hw6')
     root.mainloop()
 
 

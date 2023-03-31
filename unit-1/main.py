@@ -342,7 +342,7 @@ def do(jar='hw1.jar'):
             # print('acre pre')
             if mutex.acquire(True):
                 # print('acred pre')
-                if ([file for file in os.listdir('.') if "tle_" + jar + "_" + str(id) + '.txt' in file] != []):
+                if ([file for file in os.listdir('..') if "tle_" + jar + "_" + str(id) + '.txt' in file] != []):
                     os.remove("./tle_" + jar + "_" + str(id) + '.txt')
                 with open('./re_' + jar + "_" + str(id) + '.txt', 'w') as f:
                     f.write(instr + test)
@@ -365,7 +365,7 @@ def do(jar='hw1.jar'):
                         f.write(str(instr) + str(test))
                         f.write('\nerr:\n' + out + '\n============================================\n')
                     data[jar]['tle'] -= 1
-                    if ([file for file in os.listdir('.') if "tle_" + jar + "_" + str(id) + '.txt' in file] != []):
+                    if ([file for file in os.listdir('..') if "tle_" + jar + "_" + str(id) + '.txt' in file] != []):
                         os.remove("./tle_" + jar + "_" + str(id) + '.txt')
                     mutex.release()
                 datawrite.release()
@@ -390,7 +390,7 @@ def do(jar='hw1.jar'):
             if datawrite.acquire(True):
                 if mutex.acquire(True):
                     data[jar]['tle'] -= 1
-                    if ([file for file in os.listdir('.') if "tle_" + jar + "_" + str(id) + '.txt' in file] != []):
+                    if ([file for file in os.listdir('..') if "tle_" + jar + "_" + str(id) + '.txt' in file] != []):
                         os.remove("./tle_" + jar + "_" + str(id) + '.txt')
                     mutex.release()
                 datawrite.release()
@@ -411,7 +411,7 @@ def do(jar='hw1.jar'):
           #  print(total)
             total = total - 1
             data[jar]['tle'] -= 1
-            if ([file for file in os.listdir('.') if ("tle_" + jar + "_" + str(id) + '.txt') in file] != []):
+            if ([file for file in os.listdir('..') if ("tle_" + jar + "_" + str(id) + '.txt') in file] != []):
                 os.remove("./tle_" + jar + "_" + str(id) + '.txt')
             datawrite.release()
         del test, checktest
@@ -533,7 +533,7 @@ import os
 
 
 if __name__ == '__main__':
-    files = os.listdir('.')
+    files = os.listdir('..')
     jars = [file for file in files if os.path.splitext(file)[-1] == '.jar']
     time1 = time.time()
     main()

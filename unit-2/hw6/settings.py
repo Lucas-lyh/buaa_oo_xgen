@@ -1,0 +1,11 @@
+# execute path of java
+JAVA_PATH = "java"
+
+# elevator settings
+MAX_FLOOR = 11
+MIN_FLOOR = 1
+ELEVATOR_SPEED_LIST = [range(0.2, 0.7, 0.1)]
+ELEVATOR_CAPACITY_LIST = [range(3, 9)]
+ELEVATOR_MAX_SIZE = 12
+ELEVATOR_MIN_SIZE = 2
+ELEVATOR_MAX_ALLOCATED = 20
