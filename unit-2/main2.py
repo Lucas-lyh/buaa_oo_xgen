@@ -153,6 +153,8 @@ def safeaddwa(jar):
 idnow = 0
 sp = threading.Semaphore(0)
 
+import re
+
 
 def check(ori, out, elevator_list, maintain_list):
     for x in ori:
@@ -176,10 +178,10 @@ def check(ori, out, elevator_list, maintain_list):
             continue
         dtime = float(line.split(']')[0][1:])
         things = line.split(']')[1]
-        things = things.split('-')
+        things = re.split("_|-", things)
         type = things[0]
         eleid = int(things[-1])
-        while mainlist_it < len(maintain_list) and maintain_list[mainlist_it]['time'] < dtime:
+        while mainlist_it < len(maintain_list) and maintain_list[mainlist_it]['time'] <= dtime:
             if maintain_list[mainlist_it]['action'] == 'ADD':
                 elevator_usable[maintain_list[mainlist_it]['id']] = True
                 maintain_list[mainlist_it]['functioned'] = True
