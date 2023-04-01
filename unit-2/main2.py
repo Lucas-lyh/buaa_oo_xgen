@@ -86,25 +86,18 @@ def execute_java(oris, jar, conn):
     procjava = subprocess.Popen(cmdjava, stdin=subprocess.PIPE, stderr=subprocess.STDOUT,stdout=subprocess.PIPE)
     reinput = procjava.stdin
     n = 0
+    starttime = time.time()
     lt = 0
     # assert procjava.poll() is None
     assert isinstance(oris, str)
     for item in oris.split(sep='\n'):
-        sleep_time = float(item.split(sep='[')[1].split(sep=']')[0]) - lt
-        print(sleep_time)
-        lt = float(item.split(sep='[')[1].split(sep=']')[0])
+        #get the gap between now and anticipate output time
+        sleep_time = float(item.split(sep='[')[1].split(sep=']')[0]) - (time.time() - starttime)
+        sleep_time = sleep_time if sleep_time>=0 else 0
         time.sleep(sleep_time)
         # print(sleep_time, item.split(sep=']')[1].encode())
         reinput.write(str(item.split(sep=']')[1]+'\n').encode())
         reinput.flush()
-        # if n == 0:
-        #     n = item['n']
-        #     # print(item['gap'])
-        #     time.sleep(item['gap'])
-        # n -= 1
-        # input.write("{}-FROM-{}-TO-{}\n".format(item['id'], item['from'], item['to']).encode())
-        # input.flush()
-        # print("{}-FROM-{}-TO-{}".format(item['id'], item['from'], item['to']))
     reinput.close()
 
     success = True
@@ -271,24 +264,6 @@ def check(ori, out, elevator_list, maintain_list):
             elepassenger[eleid].remove(passid)
             eletime[eleid] = dtime
             filterinput['from'] = elelevel[eleid]
-        elif type == "IN":
-            if (len(things) != 4):
-                return ("wa", "error output on" + str(linenum))
-            level = int(things[2])
-            passid = int(things[1])
-            if abs(level - elelevel[eleid]) != 0:
-                return ('wa', "error move gap on" + str(linenum))
-            if (dtime - eletime[eleid] < 0):
-                return ('wa', "time error on line" + str(linenum))
-            filterinput = [x for x in ori if x['id'] == passid]
-            if filterinput == []:
-                return ('wa', "wrong passenger id on" + str(linenum))
-            filterinput = filterinput[0]
-            if filterinput['taked']:
-                return ('wa', 'retake passenger on' + str(linenum))
-            filterinput['taked'] = True
-            elepassenger[eleid].append(passid)
-            eletime[eleid] = dtime
         elif type == "MAINTAIN":
             if (len(things) != 3):
                 return ("wa", "error output on" + str(linenum))
