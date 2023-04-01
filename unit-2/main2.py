@@ -91,8 +91,9 @@ def execute_java(oris, jar, conn):
     assert isinstance(oris, str)
     for item in oris.split(sep='\n'):
         sleep_time = float(item.split(sep='[')[1].split(sep=']')[0]) - lt
+        print(sleep_time)
+        lt = float(item.split(sep='[')[1].split(sep=']')[0])
         time.sleep(sleep_time)
-        lt += sleep_time
         # print(sleep_time, item.split(sep=']')[1].encode())
         reinput.write(str(item.split(sep=']')[1]+'\n').encode())
         reinput.flush()
@@ -160,7 +161,7 @@ def check(ori, out, elevator_list, maintain_list):
     for x in ori:
         x['taked'] = False
     ELEVATORNUMBERID = [x['id'] for x in elevator_list]
-    elevator_usable = {x: True if x < 7 else False for x in ELEVATORNUMBERID}
+    elevator_usable = {x: True if x != 0 else False for x in ELEVATORNUMBERID}
     elevator_speed = {x['id']: x['speed'] for x in elevator_list}
     maintain_counter = {x: 0 for x in ELEVATORNUMBERID}
     elevator_capacity = {x['id']: x['capacity'] for x in elevator_list}
@@ -181,11 +182,11 @@ def check(ori, out, elevator_list, maintain_list):
         things = re.split("_|-", things)
         type = things[0]
         eleid = int(things[-1])
-        while mainlist_it < len(maintain_list) and maintain_list[mainlist_it]['time'] <= dtime:
-            if maintain_list[mainlist_it]['action'] == 'ADD':
-                elevator_usable[maintain_list[mainlist_it]['id']] = True
-                maintain_list[mainlist_it]['functioned'] = True
-            mainlist_it += 1
+        # while mainlist_it < len(maintain_list) and maintain_list[mainlist_it]['time'] <= dtime:
+        #     if maintain_list[mainlist_it]['action'] == 'ADD':
+        #         elevator_usable[maintain_list[mainlist_it]['id']] = True
+        #         maintain_list[mainlist_it]['functioned'] = True
+        #     mainlist_it += 1
 
         if (not eleid in ELEVATORNUMBERID) or not elevator_usable[eleid]:
             return 'wa', 'wrong elevator in on' + str(linenum)
@@ -305,7 +306,7 @@ def check(ori, out, elevator_list, maintain_list):
         if oriitem['from'] != oriitem['to']:
             return ("wa", "passenger {} not arrive, at {}".format(oriitem['id'], oriitem['from']))
     for manitem in maintain_list:
-        if manitem['functioned'] == False:
+        if manitem['functioned'] == False and manitem['action'] == 'MAINTAIN':
             return ("wa", "{} elevator {} not functioned".format(manitem['action'], manitem['id']))
     return ('ac', 'pass all')
 
