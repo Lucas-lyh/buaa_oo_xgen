@@ -38,28 +38,28 @@ class Generator:
             gap = random.random() * (timelimit * 3 / (float(num) / sameitem))
             n = random.choice(range(sameitem)) + 1
 
-            if (random.random() < 0.4 and elevator_size < ELEVATOR_MAX_ALLOCATED):
-                n -= 1
-                if (random.random() < 0.5 or running_elevator <= 2) and elevator_size < ELEVATOR_MAX_SIZE:
-                    elevator_size += 1
-                    running_elevator += 1
-                    maintain_set.append(elevator_size)
-                    speed = random.choice(ELEVATOR_SPEED_LIST)
-                    capacity = random.choice(ELEVATOR_CAPACITY_LIST)
-                    starting_floor = 1
-                    elevator_info.append({'id': elevator_size, 'speed': speed, 'capacity': capacity, 'maintained': False})
-                    res.append("[{:.1f}]ADD-Elevator-{}-{}-{}-{:.1f}".format(time, elevator_size, starting_floor, capacity, speed))
-                    maintain_info.append({'id': elevator_size, 'time': time, 'action': 'ADD', 'functioned': False})
-                elif (running_elevator > 2):
-                    running_elevator -= 1
-                    if len(maintain_set) == 0:
-                        print("error" + str(len(res)))
-                    mid = random.choice(maintain_set)
-                    maintain_set.remove(mid)
-                    res.append("[{:.1f}]MAINTAIN-Elevator-{}".format(time, mid))
-                    maintain_info.append({'id': mid, 'time': time, 'action': 'MAINTAIN', 'functioned': False})
-
             for i in range(n):
+                if (random.random() < 0.2 and elevator_size < ELEVATOR_MAX_ALLOCATED):
+                    if (random.random() < 0.5 or running_elevator <= 2) and elevator_size < ELEVATOR_MAX_SIZE:
+                        elevator_size += 1
+                        running_elevator += 1
+                        maintain_set.append(elevator_size)
+                        speed = random.choice(ELEVATOR_SPEED_LIST)
+                        capacity = random.choice(ELEVATOR_CAPACITY_LIST)
+                        starting_floor = 1
+                        elevator_info.append({'id': elevator_size, 'speed': speed, 'capacity': capacity, 'maintained': False})
+                        res.append("[{:.1f}]ADD-Elevator-{}-{}-{}-{:.1f}".format(time, elevator_size, starting_floor, capacity, speed))
+                        maintain_info.append({'id': elevator_size, 'time': time, 'action': 'ADD', 'functioned': False})
+                    elif (running_elevator > 2):
+                        running_elevator -= 1
+                        if len(maintain_set) == 0:
+                            print("error" + str(len(res)))
+                        mid = random.choice(maintain_set)
+                        maintain_set.remove(mid)
+                        res.append("[{:.1f}]MAINTAIN-Elevator-{}".format(time, mid))
+                        maintain_info.append({'id': mid, 'time': time, 'action': 'MAINTAIN', 'functioned': False})
+                    continue
+
                 first = random.choice(LEVELS)
                 secondrange = [x for x in LEVELS]
                 secondrange.remove(first)
