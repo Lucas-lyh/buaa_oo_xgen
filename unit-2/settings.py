@@ -1,5 +1,5 @@
 # execute path of java
-JAVA_PATH = 'C:/Users/Xjchen/.jdks/openjdk-18.0.2.1/bin/java.exe'
+JAVA_PATH = 'java'
 
 # elevator settings
 MAX_FLOOR = 11
