@@ -85,15 +85,15 @@ def execute_java(oris, jar, conn):
     cmdjava = [JAVA_PATH, '-jar', "-Xms64m", "-Xmx256m", jar]
     procjava = subprocess.Popen(cmdjava, stdin=subprocess.PIPE, stderr=subprocess.STDOUT,stdout=subprocess.PIPE)
     reinput = procjava.stdin
-    n = 0
     starttime = time.time()
-    lt = 0
+    accumulatetime = 0
     # assert procjava.poll() is None
     assert isinstance(oris, str)
     for item in oris.split(sep='\n'):
         #get the gap between now and anticipate output time
         sleep_time = float(item.split(sep='[')[1].split(sep=']')[0]) - (time.time() - starttime)
         sleep_time = sleep_time if sleep_time>=0 else 0
+        accumulatetime += sleep_time
         time.sleep(sleep_time)
         # print(sleep_time, item.split(sep=']')[1].encode())
         reinput.write(str(item.split(sep=']')[1]+'\n').encode())
@@ -102,7 +102,8 @@ def execute_java(oris, jar, conn):
 
     success = True
     try:
-        res,b = procjava.communicate(timeout=40)
+        res_time = REAL_TIMEOUT - accumulatetime
+        res, b = procjava.communicate(timeout=(res_time if res_time > 0 else 1))
     except subprocess.TimeoutExpired:
         procjava.kill()
         res, b = procjava.communicate()

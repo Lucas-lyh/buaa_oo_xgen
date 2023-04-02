@@ -1,6 +1,9 @@
 # execute path of java
 JAVA_PATH = 'java'
 
+# real-time timeout setting
+REAL_TIMEOUT = 120
+
 # elevator settings
 MAX_FLOOR = 11
 MIN_FLOOR = 1
